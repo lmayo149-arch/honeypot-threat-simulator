@@ -3,8 +3,8 @@
 A sophisticated web-based honeypot simulation platform that demonstrates real-world threat detection, malware analysis, and cybersecurity intelligence gathering techniques.
 
 ## 🚀 Live Demo
-🌐 **[Launch Honeypot Simulator!](https://yourusername.github.io/honeypot-threat-simulator)**
-*(Replace 'yourusername' with your actual GitHub username after deployment)*
+🌐 **[Launch Honeypot Simulator!](Initial release of honeypot threat intelligence simulator)
+
 
 ## ✨ Core Features
 
@@ -258,5 +258,6 @@ MIT License - See [LICENSE](LICENSE) file for complete details.
 **⭐ If this honeypot simulator enhanced your cybersecurity knowledge, please star this repository!**
 
 *Developed with passion for cybersecurity education and community learning.*
+
 
 *Last updated: August 2025*
