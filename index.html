@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Interactive honeypot simulator for learning threat intelligence and cybersecurity monitoring">
+    <meta name="keywords" content="honeypot, threat intelligence, cybersecurity, intrusion detection, malware analysis">
+    <meta property="og:title" content="Honeypot Threat Intelligence Simulator">
+    <meta property="og:description" content="Learn threat intelligence through interactive honeypot simulations">
+    <meta property="og:type" content="website">
+    <title>Honeypot Threat Intelligence Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            color: #00ff41;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 25px;
+            background: rgba(255, 165, 0, 0.1);
+            border: 2px solid #ffa500;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(255, 165, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(transparent, rgba(255, 165, 0, 0.1), transparent, rgba(255, 165, 0, 0.1));
+            animation: rotate 4s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .header h1 {
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 15px #ffa500;
+            color: #ffa500;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            color: #ffcc00;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .dashboard-section {
+            background: linear-gradient(145deg, rgba(0, 0, 0, 0.8), rgba(20, 20, 40, 0.9));
+            border: 1px solid #ffa500;
+            border-radius: 12px;
+            padding: 25px;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dashboard-section:hover {
+            box-shadow: 0 0 30px rgba(255, 165, 0, 0.4);
+            transform: translateY(-8px);
+            border-color: #ffcc00;
+        }
+
+        .dashboard-section::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #ffa500, transparent);
+            animation: honeyScan 4s infinite;
+        }
+
+        @keyframes honeyScan {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .section-title {
+            color: #ffa500;
+            font-size: 1.4em;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-shadow: 0 0 8px #ffa500;
+        }
+
+        .terminal {
+            background: #000011;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 18px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 250px;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .terminal::before {
+            content: '🍯 HONEYPOT ACTIVE';
+            position: absolute;
+            top: 8px;
+            right: 15px;
+            color: #ffa500;
+            font-size: 11px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .log-entry {
+            padding: 6px 0;
+            border-left: 3px solid #333;
+            padding-left: 12px;
+            margin: 8px 0;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .log-entry:hover {
+            background: rgba(255, 165, 0, 0.05);
+            border-left-color: #ffa500;
+        }
+
+        .log-entry.attack {
+            border-left-color: #ff4757;
+            color: #ff4757;
+        }
+
+        .log-entry.warning {
+            border-left-color: #ffa500;
+            color: #ffa500;
+        }
+
+        .log-entry.info {
+            border-left-color: #00ff41;
+            color: #00ff41;
+        }
+
+        .log-entry.critical {
+            border-left-color: #ff3838;
+            color: #ff3838;
+            animation: criticalBlink 1s infinite;
+        }
+
+        @keyframes criticalBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #ffa500, #ff8c00);
+            border: none;
+            color: #000;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            margin: 8px;
+            box-shadow: 0 4px 15px rgba(255, 165, 0, 0.3);
+        }
+
+        .btn:hover {
+            transform: scale(1.05) translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 165, 0, 0.5);
+            background: linear-gradient(45deg, #ffcc00, #ffa500);
+        }
+
+        .btn.danger {
+            background: linear-gradient(45deg, #ff4757, #ff3838);
+            color: white;
+        }
+
+        .btn.success {
+            background: linear-gradient(45deg, #2ed573, #1dd1a1);
+            color: white;
+        }
+
+        .threat-map {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .threat-indicator {
+            background: rgba(255, 165, 0, 0.1);
+            border: 1px solid #ffa500;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .threat-indicator:hover {
+            background: rgba(255, 165, 0, 0.2);
+            transform: scale(1.05);
+        }
+
+        .threat-count {
+            font-size: 2em;
+            color: #ffa500;
+            font-weight: bold;
+            text-shadow: 0 0 10px #ffa500;
+        }
+
+        .threat-label {
+            font-size: 0.9em;
+            color: #ffcc00;
+            margin-top: 8px;
+        }
+
+        .attacker-profile {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid #ff4757;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .attacker-profile:hover {
+            background: rgba(255, 71, 87, 0.2);
+            transform: translateX(5px);
+        }
+
+        .ip-address {
+            color: #ff4757;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .country-flag {
+            font-size: 1.2em;
+            margin-right: 8px;
+        }
+
+        .progress-bar {
+            background: #333;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 15px 0;
+            height: 25px;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffa500, #ffcc00, #ff8c00);
+            width: 0%;
+            transition: width 0.8s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            color: #000;
+            font-weight: bold;
+        }
+
+        .honeypot-status {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .status-item {
+            text-align: center;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            min-width: 120px;
+            margin: 5px;
+        }
+
+        .status-value {
+            font-size: 1.8em;
+            color: #ffa500;
+            font-weight: bold;
+        }
+
+        .status-label {
+            font-size: 0.9em;
+            color: #ffcc00;
+            margin-top: 5px;
+        }
+
+        .malware-sample {
+            background: rgba(255, 56, 56, 0.1);
+            border: 1px solid #ff3838;
+            border-radius: 6px;
+            padding: 10px;
+            margin: 6px 0;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .malware-sample:hover {
+            background: rgba(255, 56, 56, 0.2);
+        }
+
+        .geolocation-map {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        .world-map {
+            font-size: 3em;
+            margin: 20px 0;
+        }
+
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            background: #ffa500;
+            border-radius: 50%;
+            opacity: 0.6;
+            animation: float 6s infinite linear;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.6;
+            }
+            90% {
+                opacity: 0.6;
+            }
+            100% {
+                transform: translateY(-10px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .alert-banner {
+            background: linear-gradient(90deg, rgba(255, 71, 87, 0.2), rgba(255, 165, 0, 0.2));
+            border: 1px solid #ff4757;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            animation: alertPulse 2s infinite;
+        }
+
+        @keyframes alertPulse {
+            0%, 100% { box-shadow: 0 0 5px rgba(255, 71, 87, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(255, 71, 87, 0.6); }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-particles" id="particles"></div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>🍯 Honeypot Threat Intelligence Simulator</h1>
+            <p>Interactive Threat Detection & Analysis Environment</p>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Live Attack Monitor -->
+            <div class="dashboard-section">
+                <h2 class="section-title">🚨 Live Attack Monitor</h2>
+                <div class="honeypot-status">
+                    <div class="status-item">
+                        <div class="status-value" id="activeAttacks">0</div>
+                        <div class="status-label">Active Attacks</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-value" id="totalAttempts">1,247</div>
+                        <div class="status-label">Total Attempts</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-value" id="uniqueIPs">89</div>
+                        <div class="status-label">Unique IPs</div>
+                    </div>
+                </div>
+                <button class="btn" onclick="startMonitoring()">Start Live Monitoring</button>
+                <button class="btn danger" onclick="simulateAttack()">Simulate Attack</button>
+                <div class="terminal" id="attackLogs">
+                    <div class="log-entry info">[INIT] Honeypot services initialized</div>
+                    <div class="log-entry info">[SSH] SSH honeypot listening on port 22</div>
+                    <div class="log-entry info">[HTTP] Web honeypot active on port 80</div>
+                    <div class="log-entry info">[FTP] FTP honeypot ready on port 21</div>
+                </div>
+            </div>
+
+            <!-- Threat Intelligence Dashboard -->
+            <div class="dashboard-section">
+                <h2 class="section-title">🧠 Threat Intelligence</h2>
+                <div class="threat-map">
+                    <div class="threat-indicator" onclick="showThreatDetails('malware')">
+                        <div class="threat-count" id="malwareCount">23</div>
+                        <div class="threat-label">Malware Samples</div>
+                    </div>
+                    <div class="threat-indicator" onclick="showThreatDetails('bruteforce')">
+                        <div class="threat-count" id="bruteforceCount">156</div>
+                        <div class="threat-label">Brute Force</div>
+                    </div>
+                    <div class="threat-indicator" onclick="showThreatDetails('reconnaissance')">
+                        <div class="threat-count" id="reconCount">89</div>
+                        <div class="threat-label">Reconnaissance</div>
+                    </div>
+                    <div class="threat-indicator" onclick="showThreatDetails('exploitation')">
+                        <div class="threat-count" id="exploitCount">34</div>
+                        <div class="threat-label">Exploitation</div>
+                    </div>
+                </div>
+                <button class="btn" onclick="generateThreatReport()">Generate Report</button>
+                <button class="btn" onclick="exportThreatData()">Export Data</button>
+            </div>
+
+            <!-- Attacker Profiling -->
+            <div class="dashboard-section">
+                <h2 class="section-title">👤 Attacker Profiles</h2>
+                <div id="attackerProfiles">
+                    <div class="attacker-profile" onclick="analyzeAttacker('185.220.101.42')">
+                        <div><span class="country-flag">🇷🇺</span><span class="ip-address">185.220.101.42</span></div>
+                        <div>Russia • SSH Brute Force • 47 attempts</div>
+                    </div>
+                    <div class="attacker-profile" onclick="analyzeAttacker('103.85.24.15')">
+                        <div><span class="country-flag">🇨🇳</span><span class="ip-address">103.85.24.15</span></div>
+                        <div>China • Web Scanning • 23 attempts</div>
+                    </div>
+                    <div class="attacker-profile" onclick="analyzeAttacker('198.51.100.45')">
+                        <div><span class="country-flag">🇺🇸</span><span class="ip-address">198.51.100.45</span></div>
+                        <div>USA • Port Scanning • 12 attempts</div>
+                    </div>
+                </div>
+                <button class="btn" onclick="addNewAttacker()">Simulate New Attacker</button>
+                <button class="btn" onclick="blockAttacker()">Block IP Range</button>
+            </div>
+
+            <!-- Honeypot Services -->
+            <div class="dashboard-section">
+                <h2 class="section-title">🎯 Honeypot Services</h2>
+                <div class="honeypot-status">
+                    <div class="status-item">
+                        <div class="status-value">SSH</div>
+                        <div class="status-label" style="color: #2ed573;">Active</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-value">HTTP</div>
+                        <div class="status-label" style="color: #2ed573;">Active</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-value">FTP</div>
+                        <div class="status-label" style="color: #2ed573;">Active</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-value">SMB</div>
+                        <div class="status-label" style="color: #ff4757;">Inactive</div>
+                    </div>
+                </div>
+                <button class="btn success" onclick="deployHoneypot()">Deploy New Service</button>
+                <button class="btn" onclick="configureHoneypot()">Configure Services</button>
+                <div class="terminal" id="honeypotLogs">
+                    <div class="log-entry info">[2025-08-07 14:32:18] SSH honeypot deployed on 192.168.1.100</div>
+                    <div class="log-entry info">[2025-08-07 14:32:19] Fake vulnerable services initialized</div>
+                    <div class="log-entry warning">[2025-08-07 14:33:45] First connection detected from 185.220.101.42</div>
+                </div>
+            </div>
+
+            <!-- Malware Analysis -->
+            <div class="dashboard-section">
+                <h2 class="section-title">🦠 Malware Analysis</h2>
+                <div id="malwareSamples">
+                    <div class="malware-sample" onclick="analyzeMalware('trojan.exe')">
+                        <strong>trojan.exe</strong> - Trojan.GenKryptic.7234 - Size: 2.3MB
+                        <div>MD5: 5d41402abc4b2a76b9719d911017c592</div>
+                    </div>
+                    <div class="malware-sample" onclick="analyzeMalware('backdoor.sh')">
+                        <strong>backdoor.sh</strong> - Linux.Backdoor.Agent - Size: 4.7KB
+                        <div>SHA256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b...</div>
+                    </div>
+                    <div class="malware-sample" onclick="analyzeMalware('cryptominer.bin')">
+                        <strong>cryptominer.bin</strong> - Coinminer.Linux.Generic - Size: 8.1MB
+                        <div>Family: XMRig variant</div>
+                    </div>
+                </div>
+                <button class="btn danger" onclick="quarantineSample()">Quarantine Sample</button>
+                <button class="btn" onclick="submitToSandbox()">Submit to Sandbox</button>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="analysisProgress">Analysis Ready</div>
+                </div>
+            </div>
+
+            <!-- Geolocation Intelligence -->
+            <div class="dashboard-section">
+                <h2 class="section-title">🌍 Geographic Intelligence</h2>
+                <div class="geolocation-map">
+                    <div class="world-map">🗺️</div>
+                    <div>Attack Sources by Country</div>
+                </div>
+                <div class="threat-map">
+                    <div class="threat-indicator">
+                        <div class="threat-count">🇷🇺 34%</div>
+                        <div class="threat-label">Russia</div>
+                    </div>
+                    <div class="threat-indicator">
+                        <div class="threat-count">🇨🇳 28%</div>
+                        <div class="threat-label">China</div>
+                    </div>
+                    <div class="threat-indicator">
+                        <div class="threat-count">🇺🇸 12%</div>
+                        <div class="threat-label">USA</div>
+                    </div>
+                    <div class="threat-indicator">
+                        <div class="threat-count">🇧🇷 11%</div>
+                        <div class="threat-label">Brazil</div>
+                    </div>
+                </div>
+                <button class="btn" onclick="updateGeoData()">Update Geo Data</button>
+                <button class="btn" onclick="exportGeoReport()">Export Geo Report</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables for simulation
+        let monitoringActive = false;
+        let attackCount = 0;
+        let totalAttempts = 1247;
+        let uniqueIPs = 89;
+
+        // Create floating particles effect
+        function createParticles() {
+            const container = document.getElementById('particles');
+            setInterval(() => {
+                if (document.getElementsByClassName('particle').length < 15) {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.style.left = Math.random() * 100 + 'vw';
+                    particle.style.width = particle.style.height = Math.random() * 4 + 2 + 'px';
+                    particle.style.animationDuration = (Math.random() * 3 + 4) + 's';
+                    container.appendChild(particle);
+
+                    setTimeout(() => {
+                        if (particle.parentNode) {
+                            particle.parentNode.removeChild(particle);
+                        }
+                    }, 7000);
+                }
+            }, 800);
+        }
+
+        createParticles();
+
+        // Live monitoring simulation
+        function startMonitoring() {
+            if (monitoringActive) return;
+            
+            monitoringActive = true;
+            const attackLogs = document.getElementById('attackLogs');
+            
+            attackLogs.innerHTML += '<div class="log-entry warning">[MONITOR] Live monitoring activated</div>';
+            
+            const attackTypes = [
+                { type: 'SSH', severity: 'attack', countries: ['🇷🇺 Russia', '🇨🇳 China', '🇮🇳 India'] },
+                { type: 'HTTP', severity: 'warning', countries: ['🇺🇸 USA', '🇧🇷 Brazil', '🇩🇪 Germany'] },
+                { type: 'FTP', severity: 'attack', countries: ['🇷🇴 Romania', '🇹🇷 Turkey', '🇵🇰 Pakistan'] },
+                { type: 'TELNET', severity: 'critical', countries: ['🇰🇵 North Korea', '🇮🇷 Iran', '🇻🇳 Vietnam'] }
+            ];
+            
+            const interval = setInterval(() => {
+                if (attackCount > 10) {
+                    clearInterval(interval);
+                    monitoringActive = false;
+                    return;
+                }
+                
+                const attack = attackTypes[Math.floor(Math.random() * attackTypes.length)];
+                const country = attack.countries[Math.floor(Math.random() * attack.countries.length)];
+                const ip = generateRandomIP();
+                const timestamp = new Date().toLocaleTimeString();
+                
+                attackLogs.innerHTML += `<div class="log-entry ${attack.severity}">[${timestamp}] ${attack.type} login attempt from ${ip} (${country})</div>`;
+                attackLogs.scrollTop = attackLogs.scrollHeight;
+                
+                attackCount++;
+                totalAttempts++;
+                document.getElementById('activeAttacks').textContent = attackCount;
+                document.getElementById('totalAttempts').textContent = totalAttempts.toLocaleString();
+                
+                if (Math.random() > 0.7) {
+                    uniqueIPs++;
+                    document.getElementById('uniqueIPs').textContent = uniqueIPs;
+                }
+            }, 2000);
+        }
+
+        // Simulate specific attack
+        function simulateAttack() {
+            const attackLogs = document.getElementById('attackLogs');
+            const timestamp = new Date().toLocaleTimeString();
+            const ip = generateRandomIP();
+            
+            const attackScenarios = [
+                `[${timestamp}] CRITICAL: Botnet detected from ${ip} - Multiple service probes`,
+                `[${timestamp}] MALWARE: Trojan dropped via SSH from ${ip}`,
+                `[${timestamp}] EXPLOIT: CVE-2021-44228 Log4Shell attempt from ${ip}`,
+                `[${timestamp}] BACKDOOR: Web shell upload attempt from ${ip}`,
+                `[${timestamp}] CRYPTOMINER: Unauthorized mining software deployed from ${ip}`
+            ];
+            
+            const scenario = attackScenarios[Math.floor(Math.random() * attackScenarios.length)];
+            attackLogs.innerHTML += `<div class="log-entry critical">${scenario}</div>`;
+            attackLogs.scrollTop = attackLogs.scrollHeight;
+            
+            // Create alert banner
+            const alertBanner = document.createElement('div');
+            alertBanner.className = 'alert-banner';
+            alertBanner.innerHTML = `<strong>🚨 CRITICAL ALERT:</strong> Advanced persistent threat detected! Immediate analysis required.`;
+            document.querySelector('.container').insertBefore(alertBanner, document.querySelector('.dashboard-grid'));
+            
+            setTimeout(() => alertBanner.remove(), 5000);
+            
+            attackCount++;
+            document.getElementById('activeAttacks').textContent = attackCount;
+        }
+
+        // Generate random IP address
+        function generateRandomIP() {
+            return `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
+        }
+
+        // Show threat details
+        function showThreatDetails(threatType) {
+            const details = {
+                malware: 'Malware Analysis: 23 unique samples collected including trojans, backdoors, and cryptominers. Most common: Mirai botnet variants.',
+                bruteforce: 'Brute Force Attacks: 156 attempts detected across SSH, FTP, and Telnet services. Top source countries: Russia (34%), China (28%).',
+                reconnaissance: 'Reconnaissance: 89 scanning attempts detected. Port scans, service enumeration, and vulnerability probes identified.',
+                exploitation: 'Exploitation Attempts: 34 exploit attempts including CVE-2021-44228, CVE-2020-1472, and custom payloads.'
+            };
+            
+            alert(`${details[threatType]}\n\nThis data helps security teams understand:\n• Attack patterns and trends\n• Threat actor behavior\n• Defensive gaps and improvements\n• Intelligence for threat hunting`);
+        }
+
+        // Analyze specific attacker
+        function analyzeAttacker(ip) {
+            const profiles = {
+                '185.220.101.42': {
+                    country: 'Russia',
+                    threat: 'High',
+                    methods: 'SSH brute force, credential stuffing',
+                    first_seen: '2025-08-01',
+                    last_activity: '2025-08-07'
+                },
+                '103.85.24.15': {
+                    country: 'China',
+                    threat: 'Medium',
+                    methods: 'Web application scanning, SQLi probes',
+                    first_seen: '2025-08-05',
+                    last_activity: '2025-08-07'
+                },
+                '198.51.100.45': {
+                    country: 'USA',
+                    threat: 'Low',
+                    methods: 'Port scanning, service enumeration',
+                    first_seen: '2025-08-06',
+                    last_activity: '2025-08-07'
+                }
+            };
+            
+            const profile = profiles[ip];
+            alert(`Attacker Profile Analysis:\n\nIP: ${ip}\nCountry: ${profile.country}\nThreat Level: ${profile.threat}\nMethods: ${profile.methods}\nFirst Seen: ${profile.first_seen}\nLast Activity: ${profile.last_activity}\n\nThis intelligence helps with:\n• IP reputation scoring\n• Geographic threat mapping\n• Attack pattern correlation\n• Proactive defense measures`);
+        }
+
+        // Deploy new honeypot service
+        function deployHoneypot() {
+            const services = ['SMB', 'MYSQL', 'REDIS', 'MONGODB', 'ELASTICSEARCH'];
+            const service = services[Math.floor(Math.random() * services.length)];
+            const port = Math.floor(Math.random() * 9000) + 1000;
+            const honeypotLogs = document.getElementById('honeypotLogs');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            honeypotLogs.innerHTML += `<div class="log-entry info">[${timestamp}] Deploying ${service} honeypot on port ${port}</div>`;
+            
+            setTimeout(() => {
+                honeypotLogs.innerHTML += `<div class="log-entry warning">[${timestamp}] ${service} honeypot active - attracting attackers</div>`;
+                honeypotLogs.scrollTop = honeypotLogs.scrollHeight;
+            }, 2000);
+        }
+
+        // Configure honeypot services
+        function configureHoneypot() {
+            const honeypotLogs = document.getElementById('honeypotLogs');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const configs = [
+                'Updating SSH honeypot with weak credentials (admin/admin)',
+                'Configuring HTTP honeypot with fake admin panel',
+                'Setting FTP honeypot with anonymous access',
+                'Deploying fake database with sample data'
+            ];
+            
+            configs.forEach((config, index) => {
+                setTimeout(() => {
+                    honeypotLogs.innerHTML += `<div class="log-entry info">[${timestamp}] ${config}</div>`;
+                    honeypotLogs.scrollTop = honeypotLogs.scrollHeight;
+                }, index * 1000);
+            });
+        }
+
+        // Add new attacker simulation
+        function addNewAttacker() {
+            const countries = ['🇰🇵', '🇮🇷', '🇷🇺', '🇨🇳', '🇧🇷', '🇹🇷', '🇷🇴', '🇵🇰'];
+            const countryNames = ['North Korea', 'Iran', 'Russia', 'China', 'Brazil', 'Turkey', 'Romania', 'Pakistan'];
+            const attackTypes = ['SSH Brute Force', 'Web Scanning', 'Port Scanning', 'Malware Upload', 'SQL Injection'];
+            
+            const randomCountryIndex = Math.floor(Math.random() * countries.length);
+            const country = countries[randomCountryIndex];
+            const countryName = countryNames[randomCountryIndex];
+            const attackType = attackTypes[Math.floor(Math.random() * attackTypes.length)];
+            const ip = generateRandomIP();
+            const attempts = Math.floor(Math.random() * 50) + 1;
+            
+            const attackerProfiles = document.getElementById('attackerProfiles');
+            const newProfile = document.createElement('div');
+            newProfile.className = 'attacker-profile';
+            newProfile.onclick = () => analyzeAttacker(ip);
+            newProfile.innerHTML = `
+                <div><span class="country-flag">${country}</span><span class="ip-address">${ip}</span></div>
+                <div>${countryName} • ${attackType} • ${attempts} attempts</div>
+            `;
+            
+            attackerProfiles.appendChild(newProfile);
+            
+            // Update counters
+            uniqueIPs++;
+            totalAttempts += attempts;
+            document.getElementById('uniqueIPs').textContent = uniqueIPs;
+            document.getElementById('totalAttempts').textContent = totalAttempts.toLocaleString();
+        }
+
+        // Block attacker IP
+        function blockAttacker() {
+            alert('IP Range Blocking Simulation:\n\n• Added 185.220.101.0/24 to blocklist\n• Implemented rate limiting rules\n• Updated firewall configurations\n• Shared threat intelligence with security community\n\nIn a real honeypot, this would:\n• Automatically update firewall rules\n• Share IOCs with threat intelligence platforms\n• Trigger incident response workflows');
+        }
+
+        // Analyze malware sample
+        function analyzeMalware(filename) {
+            const analyses = {
+                'trojan.exe': {
+                    type: 'Trojan',
+                    family: 'GenKryptic',
+                    behavior: 'Credential theft, keylogging, remote access',
+                    c2_servers: '185.220.101.42:8080, 203.0.113.15:443',
+                    encryption: 'AES-256',
+                    persistence: 'Registry modification, scheduled task'
+                },
+                'backdoor.sh': {
+                    type: 'Backdoor',
+                    family: 'Linux.Agent',
+                    behavior: 'Reverse shell, file exfiltration',
+                    c2_servers: '198.51.100.10:4444',
+                    encryption: 'Base64 encoding',
+                    persistence: 'Crontab entry, systemd service'
+                },
+                'cryptominer.bin': {
+                    type: 'Cryptominer',
+                    family: 'XMRig variant',
+                    behavior: 'CPU mining, resource consumption',
+                    mining_pools: 'pool.supportxmr.com:3333',
+                    encryption: 'XOR obfuscation',
+                    persistence: 'Process injection, rootkit techniques'
+                }
+            };
+            
+            const analysis = analyses[filename];
+            const progress = document.getElementById('analysisProgress');
+            
+            progress.style.width = '0%';
+            progress.textContent = 'Analyzing...';
+            
+            let width = 0;
+            const interval = setInterval(() => {
+                width += 10;
+                progress.style.width = width + '%';
+                progress.textContent = width + '% Complete';
+                
+                if (width >= 100) {
+                    clearInterval(interval);
+                    progress.textContent = 'Analysis Complete';
+                    
+                    setTimeout(() => {
+                        alert(`Malware Analysis Results:\n\nFile: ${filename}\nType: ${analysis.type}\nFamily: ${analysis.family}\n\nBehavior:\n${analysis.behavior}\n\nC&C Servers:\n${analysis.c2_servers || analysis.mining_pools}\n\nEncryption: ${analysis.encryption}\nPersistence: ${analysis.persistence}\n\nThis intelligence helps with:\n• Threat attribution\n• IOC generation\n• Defensive rule creation\n• Incident response`);
+                    }, 500);
+                }
+            }, 200);
+        }
+
+        // Quarantine malware sample
+        function quarantineSample() {
+            alert('Malware Quarantine Process:\n\n✅ Sample isolated in secure environment\n✅ Network access blocked\n✅ Execution prevented\n✅ Backup created for analysis\n✅ Hash added to threat database\n\nSample safely contained for further research without risk to production systems.');
+        }
+
+        // Submit to sandbox analysis
+        function submitToSandbox() {
+            const progress = document.getElementById('analysisProgress');
+            progress.style.width = '0%';
+            progress.textContent = 'Submitting to sandbox...';
+            
+            let width = 0;
+            const interval = setInterval(() => {
+                width += 5;
+                progress.style.width = width + '%';
+                
+                if (width < 50) {
+                    progress.textContent = 'Uploading to sandbox...';
+                } else if (width < 80) {
+                    progress.textContent = 'Dynamic analysis running...';
+                } else {
+                    progress.textContent = 'Generating report...';
+                }
+                
+                if (width >= 100) {
+                    clearInterval(interval);
+                    progress.textContent = 'Sandbox Analysis Complete';
+                    alert('Sandbox Analysis Results:\n\n🔍 Dynamic Behavior Analysis:\n• File system modifications detected\n• Network connections to 185.220.101.42\n• Registry modifications in HKLM\\Software\n• Process injection into explorer.exe\n\n🚨 Threat Classification: HIGH RISK\n• Malware confirmed\n• Data exfiltration capabilities\n• Persistence mechanisms active\n\nRecommendation: Immediate containment and IOC deployment');
+                }
+            }, 300);
+        }
+
+        // Generate threat intelligence report
+        function generateThreatReport() {
+            alert('Threat Intelligence Report Generated:\n\n📊 Executive Summary:\n• 247 unique attack attempts in 24h\n• 23 malware samples collected\n• 34% attacks from Russia, 28% from China\n• SSH brute force most common (63%)\n\n🎯 Key Findings:\n• Mirai botnet activity increased 45%\n• New CVE-2024-XXXX exploits detected\n• Cryptomining campaigns targeting SSH\n\n🛡️ Defensive Recommendations:\n• Update SSH configurations\n• Deploy additional monitoring\n• Share IOCs with industry partners\n\nFull report exported to threat_intel_report.pdf');
+        }
+
+        // Export threat data
+        function exportThreatData() {
+            alert('Threat Data Export:\n\n📁 Exported Files:\n• attack_logs.json (2.3MB)\n• malware_samples.zip (45MB)\n• ioc_feed.csv (156KB)\n• network_flows.pcap (12MB)\n\n🔗 Integration Ready For:\n• SIEM platforms (Splunk, QRadar)\n• Threat intelligence platforms (MISP)\n• Security orchestration tools (Phantom)\n• Custom analysis tools\n\nData formatted in STIX/TAXII standard for interoperability');
+        }
+
+        // Update geographic intelligence
+        function updateGeoData() {
+            const countries = ['🇷🇺', '🇨🇳', '🇺🇸', '🇧🇷', '🇩🇪', '🇮🇳', '🇹🇷', '🇫🇷'];
+            const percentages = [34, 28, 12, 11, 8, 4, 2, 1];
+            
+            document.querySelectorAll('.threat-indicator').forEach((indicator, index) => {
+                if (index < countries.length) {
+                    const newPercentage = percentages[index] + Math.floor(Math.random() * 5) - 2;
+                    indicator.querySelector('.threat-count').textContent = `${countries[index]} ${newPercentage}%`;
+                }
+            });
+            
+            alert('Geographic Intelligence Updated:\n\n🌍 Real-time threat landscape refreshed\n📍 Attack source locations updated\n📊 Country-based statistics recalculated\n🔄 Threat actor attribution refined\n\nThis helps identify:\n• Geopolitical threat trends\n• Campaign coordination patterns\n• Regional attack preferences\n• Attribution indicators');
+        }
+
+        // Export geographic report
+        function exportGeoReport() {
+            alert('Geographic Threat Report:\n\n🗺️ Global Threat Landscape:\n• Primary threat regions identified\n• Attack vector preferences by country\n• Temporal attack patterns by timezone\n• Geopolitical correlation analysis\n\n📈 Trending Threats:\n• Eastern European botnet activity\n• Asian APT group reconnaissance\n• South American cryptomining campaigns\n\nReport includes interactive maps and detailed country profiles for strategic defense planning.');
+        }
+
+        // Auto-update counters periodically
+        setInterval(() => {
+            if (Math.random() > 0.7) {
+                const counters = ['malwareCount', 'bruteforceCount', 'reconCount', 'exploitCount'];
+                const counter = counters[Math.floor(Math.random() * counters.length)];
+                const element = document.getElementById(counter);
+                if (element) {
+                    const currentValue = parseInt(element.textContent);
+                    element.textContent = currentValue + Math.floor(Math.random() * 3) + 1;
+                }
+            }
+        }, 15000);
+
+        // Initialize with some dynamic content
+        setTimeout(() => {
+            const attackLogs = document.getElementById('attackLogs');
+            attackLogs.innerHTML += '<div class="log-entry warning">[' + new Date().toLocaleTimeString() + '] Honeypot deployment complete - ready for threat collection</div>';
+        }, 2000);
+    </script>
+</body>
+</html>
